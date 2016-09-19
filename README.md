@@ -5,7 +5,7 @@
 1. Clone this repository:
 
   ```
-  git clone https://github.com/silky/deep-scite
+  git clone https://github.com/silky/deep-scite.git
   ```
 
 2. Use [conda](http://conda.pydata.org/docs/download.html) or (virtualenv) and
