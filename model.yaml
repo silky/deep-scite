@@ -1,0 +1,43 @@
+name: DeepScite
+
+
+# A list of `steps` that we will run, in order.
+workflow:
+    - train
+    - recommend
+
+
+# A top-level set of common parameters for all steps.
+params:
+    data_dir: ./data/noon/
+    # Model
+    minibatch_size:     1000
+    word_vector_size:   200
+    embedded_word_size: 150
+    conv_size:     3
+    conv_stride:   1
+    conv_features: 1
+
+
+steps:
+    train:
+        entrypoint: ./bin/do_training.py
+        params:
+            # Meta
+            log_path:   /tmp/tf-checkpoints/deepscite-noon
+            save_path:  ./checkpoints/noon
+            # Training/Model
+            iterations:          300
+            learning_rate:       1e-3
+            weights_reg_scale:   1e-6
+            activity_reg_scale:  1e-6
+            embedding_reg_scale: 1e-6
+
+
+    recommend:
+        entrypoint: ./bin/perform_recommendations.py
+        params:
+            input_csv:          test.csv
+            output_csv:         recommendations.csv
+            report_file:        report.html
+            checkpoint_path:    ./checkpoints/noon

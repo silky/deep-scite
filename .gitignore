@@ -1,0 +1,8 @@
+*.pyc
+checkpoints/
+*.egg-info/
+__pycache__
+
+# Don't include these; they are artifacts
+data/noon/report.html
+data/noon/recommendations.csv
