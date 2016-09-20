@@ -32,6 +32,7 @@ flags.DEFINE_integer("checkpoint_frequency",    10,     "The number of times to 
 flags.DEFINE_string("log_path",                 None,   "A temporary to save checkpoints into.")
 flags.DEFINE_string("save_path",                None,   "A place to save the final checkpoint into.")
 flags.DEFINE_integer("seed",                    None,   "A random seed so that we can get consistent output.")
+flags.DEFINE_boolean("reuse_checkpoints",       False,  "True if we should re-use existing checkpoints; false otherwise.")
 
 conf = flags.FLAGS
 
@@ -142,12 +143,15 @@ def train():
         optimiser = tf.train.AdamOptimizer(conf.learning_rate)
         train_op  = optimiser.minimize(model_params.loss, var_list=tf.trainable_variables())
 
+        if not os.path.exists(conf.log_path):
+            os.makedirs(conf.log_path)
+
         writer = tf.train.SummaryWriter(conf.log_path, sess.graph)
         saver  = tf.train.Saver()
 
         latest_checkpoint = tf.train.latest_checkpoint(conf.log_path)
 
-        if latest_checkpoint is not None:
+        if conf.reuse_checkpoints and latest_checkpoint is not None:
             print("Restoring checkpoint...: " + latest_checkpoint)
             saver.restore(sess, latest_checkpoint)
             starting_iteration = int(latest_checkpoint.split('-')[-1]) + 1

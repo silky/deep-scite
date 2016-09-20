@@ -7,7 +7,7 @@ config = {
     'description': 'DeepScite - A Simple Convolutional-based Recommendation Model',
     'author': 'Noon van der Silk',
     'author_email': 'noonsilk+deepscite@gmail.com',
-    'version': '0.1',
+    'version': '0.2',
     'packages': ['deepscite'],
     'scripts': [],
     'name': 'deepscite'
