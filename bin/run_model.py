@@ -27,7 +27,7 @@ def run_step(model, step):
 
 if __name__ == "__main__":
 
-    with open("model.yaml", "r") as f:
+    with open("model.yaml", "r", encoding="utf-8") as f:
         yaml = f.read()
 
     model = ruamel.yaml.load(yaml)

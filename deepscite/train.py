@@ -66,7 +66,7 @@ def load_file(filename):
     of tuples.
     """
     rows = []
-    with open(os.path.join(conf.data_dir, filename), "r") as f:
+    with open(os.path.join(conf.data_dir, filename), "r", encoding="utf-8") as f:
         r = csv.DictReader(f)
         for row in r:
             rows.append(row)

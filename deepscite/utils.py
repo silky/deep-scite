@@ -3,12 +3,12 @@ import re
 import nltk
 
 def load_vocabulary(base_dir):
-    with open(os.path.join(base_dir, "vocab.txt"), "r") as f:
+    with open(os.path.join(base_dir, "vocab.txt"), "r", encoding="utf-8") as f:
         vocab_list = f.read().splitlines()
     return vocab_list
 
 def get_vocab_size(base_dir):
-    with open(os.path.join(base_dir, "vocab.txt"), "r") as f:
+    with open(os.path.join(base_dir, "vocab.txt"), "r", encoding="utf-8") as f:
         for i, l in enumerate(f):
             pass
     return i + 1
