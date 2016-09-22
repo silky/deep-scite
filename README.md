@@ -1,5 +1,7 @@
 # `DeepScite` - A Simple Convolutional-based Recommendation Model
 
+![Ocean Credit: https://www.flickr.com/photos/radhika_bhagwat/](https://raw.githubusercontent.com/silky/deep-scite/1ae4d44aae615617b87ffe8fa2a90db6575c7eab/images/deepscite_splash.jpg)
+
 # Installation
 
 1. Clone this repository:
