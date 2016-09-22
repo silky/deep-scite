@@ -3,6 +3,8 @@ checkpoints/
 *.egg-info/
 __pycache__
 
+.ipynb_checkpoints/
+
 # Don't include these; they are artifacts
 data/noon/report.html
 data/noon/recommendations.csv
