@@ -12,7 +12,7 @@ params:
     data_dir: ./data/noon/
     # Model
     minibatch_size:     1000
-    word_vector_size:   200
+    word_vector_size:   300
     embedded_word_size: 150
     conv_size:     3
     conv_stride:   1
@@ -27,8 +27,8 @@ steps:
             log_path:   /tmp/tf-checkpoints/deepscite-noon
             save_path:  ./checkpoints/noon
             # Training/Model
-            iterations:          300
-            learning_rate:       1e-3
+            iterations:          500
+            learning_rate:       1e-4
             weights_reg_scale:   1e-6
             activity_reg_scale:  1e-6
             embedding_reg_scale: 1e-6

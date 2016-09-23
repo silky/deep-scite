@@ -29,11 +29,11 @@ flags.DEFINE_string("data_dir",             None,   "The location of your datase
 flags.DEFINE_integer("report_frequency",        10,     "The number of times to write status reports.")
 flags.DEFINE_integer("validation_frequency",    10,     "The number of times to perform validaiton.")
 flags.DEFINE_integer("checkpoint_frequency",    10,     "The number of times to write checkpoints.")
-flags.DEFINE_string("log_path",                 None,   "A temporary to save checkpoints into.")
+flags.DEFINE_string("log_path",                 None,   "A temporary bases path to save checkpoints into.")
 flags.DEFINE_string("save_path",                None,   "A place to save the final checkpoint into.")
 flags.DEFINE_integer("seed",                    None,   "A random seed so that we can get consistent output.")
 flags.DEFINE_boolean("reuse_checkpoints",       False,  "True if we should re-use existing checkpoints; false otherwise.")
-
+flags.DEFINE_string("run_name",                 "def",  "A name for the 'run' for TensorBoard viewing.")
 conf = flags.FLAGS
 
 
@@ -125,7 +125,7 @@ def train():
 
     m = model.JointEmbeddingModelForBinaryClassification(conf.embedded_word_size)
 
-    checkpoint_base_path = conf.log_path + "/checkpoint"
+    checkpoint_base_path = conf.log_path + "/" + conf.run_name + "/checkpoint"
 
     with tf.Session() as sess:
         model_params = m.graph(
@@ -140,13 +140,14 @@ def train():
                 conf.embedding_reg_scale
                 )
 
-        optimiser = tf.train.AdamOptimizer(conf.learning_rate)
-        train_op  = optimiser.minimize(model_params.loss, var_list=tf.trainable_variables())
+        summary_op = tf.merge_all_summaries()
+        optimiser  = tf.train.AdamOptimizer(conf.learning_rate)
+        train_op   = optimiser.minimize(model_params.loss, var_list=tf.trainable_variables())
 
         if not os.path.exists(conf.log_path):
             os.makedirs(conf.log_path)
 
-        writer = tf.train.SummaryWriter(conf.log_path, sess.graph)
+        writer = tf.train.SummaryWriter(conf.log_path + "/" + conf.run_name, sess.graph)
         saver  = tf.train.Saver()
 
         latest_checkpoint = tf.train.latest_checkpoint(conf.log_path)
@@ -160,7 +161,6 @@ def train():
             sess.run(tf.initialize_all_variables())
             starting_iteration = 0
 
-        summary_op = tf.merge_all_summaries()
 
         for i in range(starting_iteration, conf.iterations + 1):
 
@@ -176,6 +176,7 @@ def train():
             _, summary_value, alpha, loss_value = sess.run([train_op, summary_op, model_params.alpha, model_params.loss], feed_dict=data)
 
             writer.add_summary(summary_value, i)
+            writer.flush()
 
             if i % conf.report_frequency == 0:
                 print("Iteration #{}, Loss: {}, α: {}.".format(i, loss_value, alpha))

@@ -62,6 +62,8 @@ class JointEmbeddingModelForBinaryClassification():
             word_vectors_init   = self._initialise([vocab_size, self.embedded_word_size])
             word_vectors        = tf.Variable(word_vectors_init, name="word_vectors")
 
+        tf.histogram_summary("word_embedding", word_vectors)
+
         wordset_1_vects = tf.nn.embedding_lookup(word_vectors, wordset_1)
         wordset_2_vects = tf.nn.embedding_lookup(word_vectors, wordset_2)
 
@@ -150,6 +152,7 @@ class JointEmbeddingModelForBinaryClassification():
             # Combination term. It's a sigmoid of `mu` so that it is bounded
             # between 0 and 1.
             alpha = tf.sigmoid(mu, name="alpha")
+            tf.scalar_summary("alpha", alpha)
 
             joint_means = alpha * final_means_wordset_1 + (1 - alpha) * final_means_wordset_2
             batch_loss  = tf.nn.sigmoid_cross_entropy_with_logits(joint_means, probs)
@@ -164,6 +167,7 @@ class JointEmbeddingModelForBinaryClassification():
             abs_diff     = tf.abs(probs - final_probs)
             right_enough = tf.equal(probs, tf.to_float(tf.greater(final_probs, 0.5)))
             accuracy     = tf.reduce_mean(tf.to_float(right_enough))
+            tf.scalar_summary("accuracy", accuracy)
 
 
         return ModelParameters(wordset_1, wordset_2, probs, 
