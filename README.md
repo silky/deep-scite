@@ -2,6 +2,26 @@
 
 ![Ocean Credit: https://www.flickr.com/photos/radhika_bhagwat/](https://github.com/silky/deep-scite/blob/master/images/deepscite_splash.jpg?raw=true)
 
+
+# Overview
+
+DeepScite takes in papers (titles, abstracts) and emits recommendations on
+whether or not they should be scited by the particular users whose data we've
+used for training (in the case of this repo, it is [me](https://scirate.com/noonsilk)).
+
+As output, it also gives a "goodness" score for each word; when this number is
+high, it has contributed strongly to the paper being (recommended) for sciting,
+when it is negative, it has contributed strongly to the paper *not* being recommended.
+
+Below are some example outputs of the system:
+
+![](images/deep-scite-interpretation-1.png)
+
+![](images/deep-scite-interpretation-2.png)
+
+The blue text are those words which are "good", and the red text are those which are "bad".
+
+
 # Installation
 
 1. Clone this repository:

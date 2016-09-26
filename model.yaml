@@ -27,8 +27,8 @@ steps:
             log_path:   /tmp/tf-checkpoints/deepscite-noon
             save_path:  ./checkpoints/noon
             # Training/Model
-            iterations:          500
-            learning_rate:       1e-4
+            iterations:          300
+            learning_rate:       1e-3
             weights_reg_scale:   1e-6
             activity_reg_scale:  1e-6
             embedding_reg_scale: 1e-6
