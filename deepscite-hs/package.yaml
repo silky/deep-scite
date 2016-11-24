@@ -1,0 +1,44 @@
+name:                deepscite-hs
+version:             0.1.0.0
+synopsis:            DeepScite in Haskell using the Haskell TensorFlow bindings.
+description:         Please see README.md
+homepage:            https://github.com/silky/deep-scite/
+license:             MIT
+author:              Noon van der Silk
+maintainer:          noonsilk@gmail.com
+copyright:           Noon van der Silk
+category:            Web
+
+
+default-extensions:
+    - UndecidableInstances
+
+dependencies:
+  - base >= 4.7 && < 5
+  - proto-lens == 0.1.*
+  # TODO: Figure out how to remove the version constraints here.
+  - tensorflow
+  - tensorflow-nn       == 0.1.*
+  - tensorflow-ops      == 0.1.*
+  - tensorflow-proto    == 0.1.*
+  - tensorflow-opgen    == 0.1.*
+  - tensorflow-core-ops == 0.1.*
+  - text
+  - vector
+  - cassava
+  - filepath
+  - bytestring
+  - lens-family
+  - transformers
+  - mtl
+  - rvar
+  - random
+  - random-fu
+  - random-source
+  - random-extras
+
+
+executables:
+  deepscite-hs:
+    source-dirs:      src
+    main:             Main.hs

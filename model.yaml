@@ -29,9 +29,9 @@ steps:
             # Training/Model
             iterations:          300
             learning_rate:       1e-3
-            weights_reg_scale:   1e-6
-            activity_reg_scale:  1e-6
-            embedding_reg_scale: 1e-6
+            weights_reg_scale:   0
+            activity_reg_scale:  0
+            embedding_reg_scale: 0
 
 
     recommend:

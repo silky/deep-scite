@@ -1,0 +1,34 @@
+# Note: Doesn't work with ghc-8. (lts-7.2)
+resolver: lts-6.2
+flags: {}
+extra-package-dbs: []
+system-ghc: false
+
+
+packages:
+ - '.'
+ - location: 
+     git: https://github.com/tensorflow/haskell/
+     commit: 5b4017e31b6cf855c68a20b466dcd6bd59b39856
+   subdirs:
+       - tensorflow
+       - tensorflow-nn
+       - tensorflow-ops
+       - tensorflow-opgen
+       - tensorflow-proto
+       - tensorflow-core-ops
+   extra-dep: true
+
+
+extra-deps:
+# proto-lens is not yet in Stackage.
+- proto-lens-0.1.0.4
+- proto-lens-protoc-0.1.0.4
+- random-extras-0.19
+
+
+# Allow our custom Setup.hs scripts to import Data.ProtoLens.Setup from the version of
+# `proto-lens-protoc` in stack's local DB.  See:
+# https://github.com/google/proto-lens/blob/master/README.md#using-cabal
+explicit-setup-deps:
+  "*": true

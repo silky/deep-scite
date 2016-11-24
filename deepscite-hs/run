@@ -1,0 +1,7 @@
+#!/bin/sh
+# export IMAGE_NAME=tensorflow/haskell:v0
+
+# A different thing that we should be using.
+export IMAGE_NAME=tensorflow/haskell/ci_build:v0
+stack --docker --docker-image=$IMAGE_NAME build && \
+    stack --docker --docker-image=$IMAGE_NAME exec deepscite-hs

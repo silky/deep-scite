@@ -142,6 +142,8 @@ def train():
 
         summary_op = tf.merge_all_summaries()
         optimiser  = tf.train.AdamOptimizer(conf.learning_rate)
+        # optimiser  = tf.train.GradientDescentOptimizer(conf.learning_rate)
+        # optimiser  = tf.train.AdagradOptimizer(conf.learning_rate)
         train_op   = optimiser.minimize(model_params.loss, var_list=tf.trainable_variables())
 
         if not os.path.exists(conf.log_path):
