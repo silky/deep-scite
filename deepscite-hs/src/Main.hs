@@ -95,6 +95,7 @@ learningRate     = TF.scalar 1e-5
 type WordIds    = TF.Tensor TF.Value Int32
 type Probs      = TF.Tensor TF.Value Float
 
+
 data Model      = Model {
       infer :: TF.TensorData Int32 -- word ids
             -> TF.Session (V.Vector Float)
@@ -102,7 +103,6 @@ data Model      = Model {
     , loss      :: TF.TensorData Int32 -> TF.TensorData Float -> TF.Session Float
     , accuracy  :: TF.TensorData Int32 -> TF.TensorData Float -> TF.Session Float
     }
-
 
 
 -- We need to build our own `conv2D` because the one in `GenOps` is broken.
