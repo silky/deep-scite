@@ -274,8 +274,6 @@ main = TF.runSession $ do
             titles = TF.encodeTensorData imgDim  wordIdsFlat :: TF.TensorData Int32
             probs  = TF.encodeTensorData probDim sciteProbs  :: TF.TensorData Float
 
-            smallIds = V.filter (<0) wordIdsFlat
-
         -- Train
         train model titles probs
 
