@@ -39,10 +39,10 @@ The blue text are those words which are "good", and the red text are those which
 
     `source activate deep-scite`
     
-1. Install TensorFlow (version `0.10`):
+1. Install TensorFlow (version `0.11`):
 
   Head over
-  [here](https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#using-pip)
+  [here](https://www.tensorflow.org/versions/r0.11/get_started/os_setup.html#using-pip)
   and pick the version that is appropriate for your architecture.
 
 1. Install the requirements
@@ -78,3 +78,19 @@ From the root directory of this project:
   This will run through the steps defined in `model.yaml`.
 
 3. Open up `./data/noon/report.html` in your browser and observe recommendations.
+
+
+# Misc
+
+You can play around with the embedding by looking at it in TensorBoard. Run
+TensorBoard with:
+
+```
+tensorboard --logdir /tmp/tf-checkpoints/deepscite-noon
+```
+
+Then click on the "Embedding" tab.
+
+<a href="images/embedding.gif">
+![](images/embedding.gif)
+</a>
