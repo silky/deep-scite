@@ -6,6 +6,7 @@ import numpy        as np
 import tensorflow   as tf
 import deepscite.model as model
 import deepscite.utils as utils
+from tensorflow.contrib.tensorboard.plugins import projector
 
 flags = tf.app.flags
 
@@ -13,6 +14,7 @@ flags = tf.app.flags
 flags.DEFINE_integer("iterations",          2000,   "Number of total training iterations.")
 flags.DEFINE_integer("minibatch_size",      1000,   "Number of word vectors we should optimise over at each iteration step.")
 flags.DEFINE_float("learning_rate",         1e-2,   "Learning rate.")
+flags.DEFINE_float("init_stddev",           1e-4,   "Standard Deviation of initialisation.")
 flags.DEFINE_integer("embedded_word_size",  250,    "Dimension of the word embedding.")
 flags.DEFINE_integer("conv_size",           3,      "Number of words the convolution looks at.")
 flags.DEFINE_integer("conv_stride",         1,      "The stride of the convolution.")
@@ -35,7 +37,6 @@ flags.DEFINE_integer("seed",                    None,   "A random seed so that w
 flags.DEFINE_boolean("reuse_checkpoints",       False,  "True if we should re-use existing checkpoints; false otherwise.")
 flags.DEFINE_string("run_name",                 "def",  "A name for the 'run' for TensorBoard viewing.")
 conf = flags.FLAGS
-
 
 def validate_params():
     if conf.seed:
@@ -74,6 +75,12 @@ def load_file(filename):
     return np.array(rows)
 
 
+def wordstring_to_wids(word_str):
+    wids = word_str.split(" ")
+    wids = list(map(int, wids[:conf.word_vector_size]))
+
+    return wids
+
 def get_datapoints(dataset):
     X1     = np.zeros([conf.minibatch_size, conf.word_vector_size, 1],   dtype=np.int32)
     X2     = np.zeros([conf.minibatch_size, conf.word_vector_size, 1],   dtype=np.int32)
@@ -89,19 +96,22 @@ def get_datapoints(dataset):
         if "probability" in d:
             Y[k] = float(d["probability"])
 
-        wordset_1_ids   = d["wordset_1_ids"].split(" ")[:conf.word_vector_size]
-        wordset_2_ids   = d["wordset_2_ids"].split(" ")[:conf.word_vector_size]
+        wordset_1_ids   = wordstring_to_wids(d["wordset_1_ids"])
+        wordset_2_ids   = wordstring_to_wids(d["wordset_2_ids"])
 
         for j, wid in enumerate(wordset_1_ids):
-            X1[k, j]        = int(wid)
+            X1[k, j]        = wid
             masks1[k, j]    = 1
 
         for j, wid in enumerate(wordset_2_ids):
-            X2[k, j]        = int(wid)
+            X2[k, j]        = wid
             masks2[k, j]    = 1
 
         sizes1[k] = len(wordset_1_ids)
         sizes2[k] = len(wordset_2_ids)
+
+        assert len(wordset_1_ids) > 0, "No title words."
+        assert len(wordset_2_ids) > 0, "No abstract words."
 
     return X1, X2, Y, masks1, masks2, sizes1, sizes2, dataset
 
@@ -123,14 +133,17 @@ def train():
     train_data      = load_file("train.csv")
     validation_data = load_file("validation.csv")
 
-    m = model.JointEmbeddingModelForBinaryClassification(conf.embedded_word_size)
+
+
+    m = model.JointEmbeddingModelForBinaryClassification(conf.embedded_word_size, conf.init_stddev)
 
     checkpoint_base_path = conf.log_path + "/" + conf.run_name + "/checkpoint"
+    vocab_size = utils.get_vocab_size(conf.data_dir)
 
     with tf.Session() as sess:
         model_params = m.graph(
                 conf.minibatch_size,
-                utils.get_vocab_size(conf.data_dir),
+                vocab_size,
                 conf.word_vector_size,
                 conf.conv_size,
                 conf.conv_stride,
@@ -139,6 +152,11 @@ def train():
                 conf.activity_reg_scale,
                 conf.embedding_reg_scale
                 )
+
+        config    = projector.ProjectorConfig()
+        embedding = config.embeddings.add()
+        embedding.tensor_name = model_params.word_vectors.name
+        embedding.metadata_path = os.path.join(conf.data_dir, "vocab.txt")
 
         summary_op = tf.merge_all_summaries()
         optimiser  = tf.train.AdamOptimizer(conf.learning_rate)
@@ -149,6 +167,8 @@ def train():
 
         writer = tf.train.SummaryWriter(conf.log_path + "/" + conf.run_name, sess.graph)
         saver  = tf.train.Saver()
+
+        projector.visualize_embeddings(writer, config)
 
         latest_checkpoint = tf.train.latest_checkpoint(conf.log_path)
 

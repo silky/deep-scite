@@ -7,13 +7,14 @@
 import sys
 import subprocess
 import ruamel.yaml
+import copy
 
 def run_step(model, step, remaining_args):
     exe             = model["steps"][step]["entrypoint"]
     params          = model["steps"][step]["params"]
-    common_params   = model["params"]
+    common_params   = model["common_params"]
 
-    merged = common_params
+    merged = copy.deepcopy(common_params)
     for (k, v) in params.items():
         merged[k] = v
     

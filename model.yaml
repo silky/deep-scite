@@ -3,15 +3,16 @@ name: DeepScite
 
 # A list of `steps` that we will run, in order.
 workflow:
+    - reduce_words
     - train
     - recommend
 
 
 # A top-level set of common parameters for all steps.
-params:
-    data_dir: ./data/noon/
+common_params:
+    data_dir: ./data/noon_less_words/
     # Model
-    minibatch_size:     1000
+    minibatch_size:     150
     word_vector_size:   300
     embedded_word_size: 150
     conv_size:     3
@@ -20,6 +21,14 @@ params:
 
 
 steps:
+    reduce_words:
+        entrypoint:   ./bin/reduce_vocab.py
+        params:
+            data_dir:     ./data/noon/
+            new_data_dir: ./data/noon_less_words/
+            required_word_count: 50
+
+
     train:
         entrypoint: ./bin/do_training.py
         params:
@@ -27,7 +36,7 @@ steps:
             log_path:   /tmp/tf-checkpoints/deepscite-noon
             save_path:  ./checkpoints/noon
             # Training/Model
-            iterations:          300
+            iterations:          1000
             learning_rate:       1e-3
             weights_reg_scale:   1e-6
             activity_reg_scale:  1e-6

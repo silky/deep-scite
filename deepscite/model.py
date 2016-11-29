@@ -22,7 +22,8 @@ ModelParameters = namedtuple("ModelParameters",
             "accuracy",
             "conv_wordset_1_weights", "conv_wordset_2_weights",
             "joint_means", "final_probs",
-            "alpha"
+            "alpha",
+            "word_vectors"
             ])
 
 class JointEmbeddingModelForBinaryClassification():
@@ -140,6 +141,17 @@ class JointEmbeddingModelForBinaryClassification():
             activity_reg_wordset_1      = tf.reduce_mean(tf.div(tf.reduce_sum(tf.abs(conv_wordset_1_activity), reduction_indices=[1,2,3]), wordset_1_lengths))
             activity_reg_wordset_2      = tf.reduce_mean(tf.div(tf.reduce_sum(tf.abs(conv_wordset_2_activity), reduction_indices=[1,2,3]), wordset_2_lengths))
 
+            # Handy debugging statements
+            # 
+            # final_means_wordset_1 = tf.Print(final_means_wordset_1, [final_means_wordset_1], "FM1")
+            # final_means_wordset_1 = tf.Print(final_means_wordset_2, [final_means_wordset_2], "FM2")
+            #
+            # embedding_reg_wordset_1    = tf.Print(embedding_reg_wordset_1, [embedding_reg_wordset_1], "ER1")
+            # embedding_reg_wordset_2    = tf.Print(embedding_reg_wordset_2, [embedding_reg_wordset_2], "ER2")
+            # conv_weights_reg_wordset_1 = tf.Print(conv_weights_reg_wordset_1, [conv_weights_reg_wordset_1], "CR1")
+            # conv_weights_reg_wordset_2 = tf.Print(conv_weights_reg_wordset_2, [conv_weights_reg_wordset_2], "CR2")
+            # activity_reg_wordset_1     = tf.Print(activity_reg_wordset_1, [activity_reg_wordset_1], "AR1")
+            # activity_reg_wordset_2     = tf.Print(activity_reg_wordset_2, [activity_reg_wordset_2], "AR2")
 
             # Total regularisation term.
             regs_and_scales = [ (weights_reg_scale,     conv_weights_reg_wordset_1 + conv_weights_reg_wordset_2), 
@@ -183,6 +195,7 @@ class JointEmbeddingModelForBinaryClassification():
                 conv_wordset_2_weights,
                 joint_means,
                 final_probs,
-                alpha)
+                alpha,
+                word_vectors)
 
 
