@@ -8,8 +8,8 @@ system-ghc: false
 packages:
  - '.'
  - location: 
-     git: https://github.com/tensorflow/haskell/
-     commit: 5b4017e31b6cf855c68a20b466dcd6bd59b39856
+     git    : https://github.com/tensorflow/haskell/
+     commit : 56a629f9dab17d9614bf2b7cc4c4e5d33b30e923
    subdirs:
        - tensorflow
        - tensorflow-nn
