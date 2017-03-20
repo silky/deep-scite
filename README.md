@@ -39,12 +39,6 @@ The blue text are those words which are "good", and the red text are those which
 
     `source activate deep-scite`
     
-1. Install TensorFlow (version `0.11`):
-
-  Head over
-  [here](https://www.tensorflow.org/versions/r0.11/get_started/os_setup.html#using-pip)
-  and pick the version that is appropriate for your architecture.
-
 1. Install the requirements
 
   `pip install -r requirements.txt`

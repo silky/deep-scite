@@ -158,14 +158,14 @@ def train():
         embedding.tensor_name = model_params.word_vectors.name
         embedding.metadata_path = os.path.join(conf.data_dir, "vocab.txt")
 
-        summary_op = tf.merge_all_summaries()
+        summary_op = tf.summary.merge_all()
         optimiser  = tf.train.AdamOptimizer(conf.learning_rate)
         train_op   = optimiser.minimize(model_params.loss, var_list=tf.trainable_variables())
 
         if not os.path.exists(conf.log_path):
             os.makedirs(conf.log_path)
 
-        writer = tf.train.SummaryWriter(conf.log_path + "/" + conf.run_name, sess.graph)
+        writer = tf.summary.FileWriter(conf.log_path + "/" + conf.run_name, sess.graph)
         saver  = tf.train.Saver()
 
         projector.visualize_embeddings(writer, config)
@@ -178,7 +178,7 @@ def train():
             starting_iteration = int(latest_checkpoint.split('-')[-1]) + 1
         else:
             print("Initialising new model...")
-            sess.run(tf.initialize_all_variables())
+            sess.run(tf.global_variables_initializer())
             starting_iteration = 0
 
 

@@ -63,7 +63,7 @@ class JointEmbeddingModelForBinaryClassification():
             word_vectors_init   = self._initialise([vocab_size, self.embedded_word_size])
             word_vectors        = tf.Variable(word_vectors_init, name="word_vectors")
 
-        tf.histogram_summary("word_embedding", word_vectors)
+        tf.summary.histogram("word_embedding", word_vectors)
 
         wordset_1_vects = tf.nn.embedding_lookup(word_vectors, wordset_1)
         wordset_2_vects = tf.nn.embedding_lookup(word_vectors, wordset_2)
@@ -112,7 +112,7 @@ class JointEmbeddingModelForBinaryClassification():
                 wordset_1_masks_shaped   = tf.expand_dims(wordset_1_masks, 3)
 
                 # Set any terms where there aren't words to zero.
-                conv_wordset_1_activity  = tf.mul(conv_wordset_1_biased, wordset_1_masks_shaped)
+                conv_wordset_1_activity  = tf.multiply(conv_wordset_1_biased, wordset_1_masks_shaped)
 
             with tf.name_scope("wordset_2"):
                 conv_wordset_2_init      = self._initialise([conv_size, 1, self.embedded_word_size, conv_features])
@@ -124,7 +124,7 @@ class JointEmbeddingModelForBinaryClassification():
                 wordset_2_masks_shaped   = tf.expand_dims(wordset_2_masks, 3)
 
                 # Set any terms where there aren't words to zero.
-                conv_wordset_2_activity  = tf.mul(conv_wordset_2_biased, wordset_2_masks_shaped)
+                conv_wordset_2_activity  = tf.multiply(conv_wordset_2_biased, wordset_2_masks_shaped)
 
         # Base combination term.
         mu = tf.Variable(0.0, name="mu")
@@ -164,14 +164,14 @@ class JointEmbeddingModelForBinaryClassification():
             # Combination term. It's a sigmoid of `mu` so that it is bounded
             # between 0 and 1.
             alpha = tf.sigmoid(mu, name="alpha")
-            tf.scalar_summary("alpha", alpha)
+            tf.summary.scalar("alpha", alpha)
 
             joint_means = alpha * final_means_wordset_1 + (1 - alpha) * final_means_wordset_2
-            batch_loss  = tf.nn.sigmoid_cross_entropy_with_logits(joint_means, probs)
+            batch_loss  = tf.nn.sigmoid_cross_entropy_with_logits(logits=joint_means, labels=probs)
 
             loss = tf.reduce_mean(batch_loss) + regularisation
 
-            tf.scalar_summary("loss", loss)
+            tf.summary.scalar("loss", loss)
 
 
         with tf.name_scope("accuracy"):
@@ -179,7 +179,7 @@ class JointEmbeddingModelForBinaryClassification():
             abs_diff     = tf.abs(probs - final_probs)
             right_enough = tf.equal(probs, tf.to_float(tf.greater(final_probs, 0.5)))
             accuracy     = tf.reduce_mean(tf.to_float(right_enough))
-            tf.scalar_summary("accuracy", accuracy)
+            tf.summary.scalar("accuracy", accuracy)
 
 
         return ModelParameters(wordset_1, wordset_2, probs, 
