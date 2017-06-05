@@ -91,27 +91,23 @@ convSize         = 3     :: Int64
 stride           = 1     :: Int64
 
 
--- We need to build our own `conv2D` because the one in `GenOps` is broken.
+
 conv2D :: forall v1 v2 t m . ( TF.MonadBuild m
                              , TF.TensorType t
                              , TF.TensorKind v1
                              , TF.TensorKind v2
                              , TF.Rendered (TF.Tensor v1)
                              , TF.OneOf '[Data.Word.Word16, Double, Float] t)
-       => TF.Tensor v1 t     -- ^ __input__
-       -> TF.Tensor v2 t     -- ^ __filter__
-       -> [Int64]            -- ^ __strides__
-       -> m (TF.Tensor v1 t) -- ^ __output__
-conv2D input filter strides = TF.build $ do
-    inputs  <- TF.buildInputs input
-    filters <- TF.buildInputs filter
-    --
-    TF.buildOp [] $ TF.opDef "Conv2D"
-                    & TF.opAttr "T"           .~ TF.tensorType (undefined :: t)
-                    & TF.opAttr "strides"     .~ strides
-                    & TF.opAttr "padding"     .~ ("SAME" :: ByteString)
-                    & TF.opAttr "data_format" .~ ("NHWC" :: ByteString)
-                    & TF.opInputs             .~ (inputs ++ filters)
+       => TF.Tensor v1 t            -- ^ __input__
+       -> TF.Tensor v2 t            -- ^ __filter__
+       -> [Int64]                   -- ^ __strides__
+       -> m (TF.Tensor TF.Value t)  -- ^ __output__
+conv2D input filter strides = TF.render $ do
+            TFC.conv2D' ( 
+                      (TF.opAttr "strides"      .~ (strides :: [Int64]))
+                    . (TF.opAttr "padding"      .~ ("SAME"  :: ByteString))
+                    . (TF.opAttr "data_format"  .~ ("NHWC"  :: ByteString))
+                ) input filter
 
 
 randomParam :: TF.Shape -> TF.Session (TF.Tensor TF.Value Float)
@@ -195,7 +191,7 @@ main = TF.runSession $ do
 
     let params = [convWeights, convBias, embedding] :: [TF.Variable Float]
 
-    trainStep <- TF.minimizeWith (TF.adam) lossStep params
+    trainStep <- TF.minimizeWith TF.adam lossStep params
 
 
     let train    = \ts ps -> TF.runWithFeeds_ [TF.feed titles ts, TF.feed probs ps] trainStep
@@ -235,6 +231,9 @@ main = TF.runSession $ do
         train titles probs
 
         when (i `mod` 100 == 0) $ do
+
+            -- paramValues <- mapM TF.render (map TF.readValue params)
+            -- TF.save "./checkpoint" paramValues >>= TF.run_
 
             modelLoss <- loss titles probs
             accuracy  <- accuracy titles probs
