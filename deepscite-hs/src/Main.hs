@@ -8,25 +8,25 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts      #-}
---
--- TODO:
---  Should all numbers be instances be able to be TF.scalars? Yes.
---
+
 module Main where
 
-import qualified TensorFlow.Ops             as TF
-import qualified TensorFlow.GenOps.Core     as TFC
+
+import qualified TensorFlow.GenOps.Core     as TFC 
+import qualified TensorFlow.Minimize        as TF
+import qualified TensorFlow.Ops             as TF hiding ( initializedVariable
+                                                         , zeroInitializedVariable )
+import qualified TensorFlow.Variable        as TF
 import qualified TensorFlow.Types           as TF
-import qualified TensorFlow.Build           as TF
-import qualified TensorFlow.BuildOp         as TF
-import qualified TensorFlow.Session         as TF
 import qualified TensorFlow.Tensor          as TF
-import TensorFlow.Ops () -- Num instance for Tensor
-import qualified TensorFlow.ControlFlow     as TF
+import qualified TensorFlow.Build           as TF
+import qualified TensorFlow.Output          as TF
+import qualified TensorFlow.Core            as TF
 import qualified TensorFlow.Gradient        as TF
-import qualified TensorFlow.Nodes           as TF
+import qualified TensorFlow.BuildOp         as TF
 import qualified TensorFlow.EmbeddingOps    as TF
 import qualified TensorFlow.NN              as TF
+
 import           Data.Csv                   ( FromNamedRecord(..)
                                             , decodeByName
                                             , (.:)
@@ -75,131 +75,51 @@ import qualified Proto.Tensorflow.Core.Framework.TensorShape
   as TensorShape
 import Text.Printf (printf)
 
--- For debugging only
-import System.Random
-import Debug.Trace
 
 
--- | "-1" means it can be arbitrary
-minibatchSize    = -1    :: Int64
+trainDataDir :: FilePath
+trainDataDir = "../data/noon/"
+
+
 inputSize        = 200   :: Int64 
+batchSize        = 100   :: Int
+convFeatures     = 1     :: Int64
+minibatchSize    = -1    :: Int64
 embeddedWordSize = 150   :: Int64
 vocabSize        = 79951 :: Int64
-convFeatures     = 1     :: Int64
 convSize         = 3     :: Int64
 stride           = 1     :: Int64
-batchSize        = 100   :: Int
-learningRate     = TF.scalar 1e-5
-
-
-type WordIds    = TF.Tensor TF.Value Int32
-type Probs      = TF.Tensor TF.Value Float
-
-
-data Model      = Model {
-      infer :: TF.TensorData Int32 -- word ids
-            -> TF.Session (V.Vector Float)
-    , train     :: TF.TensorData Int32 -> TF.TensorData Float -> TF.Session ()
-    , loss      :: TF.TensorData Int32 -> TF.TensorData Float -> TF.Session Float
-    , accuracy  :: TF.TensorData Int32 -> TF.TensorData Float -> TF.Session Float
-    }
 
 
 -- We need to build our own `conv2D` because the one in `GenOps` is broken.
-conv2D :: forall v1 v2 t . (TF.TensorType t, 
-                            TF.OneOf '[Data.Word.Word16, Double, Float] t)
-          => TF.Tensor v1 t         -- ^ __input__
-          -> TF.Tensor v2 t         -- ^ __filter__
-          -> [Int64]                -- ^ __strides__
-          -> TF.Tensor TF.Value t   -- ^ __output__
-conv2D input filter strides | TF.eqLengthGuard [] =
-    TF.buildOp (
-             TF.opDef "Conv2D"
-                & TF.opAttr "T"             .~ TF.tensorType (undefined :: t)
-                & TF.opAttr "strides"       .~ strides
-                & TF.opAttr "padding"       .~ ("SAME" :: ByteString)
-                & TF.opAttr "data_format"   .~ ("NHWC" :: ByteString)
-             )
-        input filter
+conv2D :: forall v1 v2 t m . ( TF.MonadBuild m
+                             , TF.TensorType t
+                             , TF.TensorKind v1
+                             , TF.TensorKind v2
+                             , TF.Rendered (TF.Tensor v1)
+                             , TF.OneOf '[Data.Word.Word16, Double, Float] t)
+       => TF.Tensor v1 t     -- ^ __input__
+       -> TF.Tensor v2 t     -- ^ __filter__
+       -> [Int64]            -- ^ __strides__
+       -> m (TF.Tensor v1 t) -- ^ __output__
+conv2D input filter strides = TF.build $ do
+    inputs  <- TF.buildInputs input
+    filters <- TF.buildInputs filter
+    --
+    TF.buildOp [] $ TF.opDef "Conv2D"
+                    & TF.opAttr "T"           .~ TF.tensorType (undefined :: t)
+                    & TF.opAttr "strides"     .~ strides
+                    & TF.opAttr "padding"     .~ ("SAME" :: ByteString)
+                    & TF.opAttr "data_format" .~ ("NHWC" :: ByteString)
+                    & TF.opInputs             .~ (inputs ++ filters)
 
 
-randomParam :: TF.Shape ->
-               TF.Build (TF.Tensor TF.Value Float)
-randomParam (TF.Shape shape) =
-    (* stddev) <$> TF.truncatedNormal (TF.vector shape)
-  where 
-    stddev = TF.scalar 0.0001
+randomParam :: TF.Shape -> TF.Session (TF.Tensor TF.Value Float)
+randomParam (TF.Shape shape) = TF.truncatedNormal (TF.vector shape)
 
 
-reduceMean xs = TF.mean xs (TF.scalar (0 :: Int32))
-
-
--- | ...
-createModel :: TF.Build Model
-createModel = do
-    -- Only "titles" for now; forget the masks and what-not.
-    titles      <- TF.placeholder [minibatchSize, inputSize, 1] :: TF.Build WordIds
-    probs       <- TF.placeholder [minibatchSize]               :: TF.Build Probs
-
-    embedding    <- TF.initializedVariable =<< randomParam [vocabSize, embeddedWordSize]
-    wordVectors  <- TF.embeddingLookup [embedding] titles
-
-
-    -- Convolution
-    convWeights <- TF.initializedVariable =<< randomParam [convSize, 1, embeddedWordSize, convFeatures]
-    convBias    <- TF.zeroInitializedVariable [convFeatures]
-
-    let conv'   = conv2D wordVectors convWeights [1, stride, 1, 1]
-    let convOut = conv' `TF.add` convBias
-        means   = TF.mean convOut (TF.vector [1,2,3 :: Int32])
-
-
-    -- Loss
-    sigmoidLoss <- TF.sigmoidCrossEntropyWithLogits means probs
-
-    let finalLoss = reduceMean sigmoidLoss
-        params    = [convWeights, convBias, embedding]
-
-    
-    -- Training (by Gradient Descent)
-    
-    grads <- TF.gradients finalLoss params
-
-    let applyGrad param grad = TF.assign param $ param `TF.sub` (learningRate * grad)
-    
-    trainStep <- TF.group =<< zipWithM applyGrad params grads
-
-    -- TODO: Implement Adam instead.
-
-
-    -- Inference
-    let finalProbs = TFC.sigmoid means
-    predict  <- TF.render finalProbs
-
-
-    -- Accuracy
-    let rightEnough = TF.equal probs (TFC.cast (TFC.greater finalProbs (TF.scalar 0.5)))
-        accuracyT   = reduceMean (TFC.cast rightEnough)
-
-
-    return Model {
-          train = \ts ps -> TF.runWithFeeds_ [
-              TF.feed titles ts
-            , TF.feed probs  ps
-            ] trainStep
-
-        , infer = \ts -> TF.runWithFeeds [TF.feed titles ts] predict
-
-        , loss = \ts ps -> TF.unScalar <$> TF.runWithFeeds [
-              TF.feed titles ts
-            , TF.feed probs  ps
-            ] finalLoss
-
-        , accuracy = \ts ps -> TF.unScalar <$> TF.runWithFeeds [
-              TF.feed titles ts
-            , TF.feed probs  ps
-            ] accuracyT
-        }
+reduceMean :: TF.Tensor v Float -> TF.Tensor TF.Build Float
+reduceMean xs = TF.mean xs (TF.range 0 (TFC.rank xs) 1)
 
 
 data Article = Article {
@@ -208,10 +128,6 @@ data Article = Article {
     , abstractIds      :: !Text
     , sciteProbability :: !Float
     } deriving (Show)
-
-
-trainDataDir :: FilePath
-trainDataDir = "../data/noon/"
 
 
 readArticles :: FilePath -> IO (V.Vector Article)
@@ -230,8 +146,10 @@ instance FromNamedRecord Article where
         <*> r .: "probability"
 
 
+say = liftIO . putStrLn
+
 main = TF.runSession $ do
-    liftIO $ putStrLn "Loading and shuffling data ..."
+    say "Loading and shuffling data ..."
 
     trainArticles'      <- fmap V.toList $ liftIO (readArticles "train")
     validationArticles' <- fmap V.toList $ liftIO (readArticles "validation")
@@ -240,26 +158,65 @@ main = TF.runSession $ do
     validationArticles  <- liftIO (runRVar (shuffle validationArticles') StdRandom :: IO [Article])
      
 
-    liftIO $ putStrLn "Building model ..."
-    model <- TF.build createModel
+    ---------------------------------------------------------------------
+    --
+    say "Building model ..."
+
+    titles      :: TF.Tensor TF.Value Int32 <- TF.placeholder [minibatchSize, inputSize, 1]
+    probs       :: TF.Tensor TF.Value Float <- TF.placeholder [minibatchSize]
+
+    embedding   :: TF.Variable Float   <- TF.initializedVariable =<< randomParam [vocabSize, embeddedWordSize]
+
+    -- Why?
+    em' <- TF.render $ TF.readValue embedding
+    wordVectors :: TF.Tensor TF.Value Float <- TF.embeddingLookup [em'] titles
+
+    convWeights :: TF.Variable Float   <- TF.initializedVariable =<< randomParam [convSize, 1, embeddedWordSize, convFeatures]
+    convBias    :: TF.Variable Float   <- TF.zeroInitializedVariable [convFeatures]
+
+    conv <- conv2D wordVectors (TF.readValue convWeights) [1, stride, 1, 1] 
+    let convOut = conv `TFC.add` (TF.readValue convBias)
+        means   = TF.mean convOut (TF.vector [1,2,3 :: Int32])
+
+    means' <- TF.render means
+
+    sigmoidLoss <- TF.sigmoidCrossEntropyWithLogits means' probs
+    lossStep <- TF.render $ reduceMean sigmoidLoss
+
+
+    -- Inference
+    let finalProbs = TFC.sigmoid means
+    predict  <- TF.render finalProbs
+
+    -- Accuracy
+    let rightEnough  = TF.equal probs (TFC.cast (TFC.greater finalProbs (TF.scalar 0.5)))
+        accuracyStep = reduceMean (TFC.cast rightEnough)
+
+
+    let params = [convWeights, convBias, embedding] :: [TF.Variable Float]
+
+    trainStep <- TF.minimizeWith (TF.adam) lossStep params
+
+
+    let train    = \ts ps -> TF.runWithFeeds_ [TF.feed titles ts, TF.feed probs ps] trainStep
+        loss     = \ts ps -> TF.unScalar <$> TF.runWithFeeds [TF.feed titles ts, TF.feed probs ps] lossStep
+        accuracy = \ts ps -> TF.unScalar <$> TF.runWithFeeds [TF.feed titles ts, TF.feed probs ps] accuracyStep
+    --
+    ---------------------------------------------------------------------
 
     let -- TODO: Better yet, have some appropriate method of data
         -- selection here, including epoch's and what-not.
         selectBatch i xs = take batchSize $ drop (i * batchSize) (cycle xs)
 
-    liftIO $ putStrLn "Training ..."
-    forM_ ([0..10000] :: [Int]) $ \i -> do
+    say "Training ..."
+    forM_ ([0..1000] :: [Int]) $ \i -> do
         let batch              = selectBatch i trainArticles
 
             idStrToIds :: Article -> [Int32]
             idStrToIds article = fromIntegral . read . unpack <$> splitOn " " (titleIds article)
 
-            imgDim             = [fromIntegral batchSize, inputSize, 1] :: TF.Shape
-            probDim            = [fromIntegral batchSize]               :: TF.Shape
-
-            -- Madness.
-            -- flatten :: V.Vector [Int32] -> V.Vector Int32
-            -- flatten vs = V.fromList $ join $ V.toList vs
+            imgDim  = [fromIntegral batchSize, inputSize, 1] :: TF.Shape
+            probDim = [fromIntegral batchSize]               :: TF.Shape
             flatten = join
 
             -- We need to append zeros so that the numbers here aren't random
@@ -275,12 +232,12 @@ main = TF.runSession $ do
             probs  = TF.encodeTensorData probDim sciteProbs  :: TF.TensorData Float
 
         -- Train
-        train model titles probs
+        train titles probs
 
         when (i `mod` 100 == 0) $ do
 
-            modelLoss <- loss model titles probs
-            accuracy  <- accuracy model titles probs
+            modelLoss <- loss titles probs
+            accuracy  <- accuracy titles probs
 
             liftIO $ do
                 putStrLn ""

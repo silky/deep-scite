@@ -1,9 +1,9 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
 name:           deepscite-hs
-version:        0.1.0.0
+version:        0.1.2.0
 synopsis:       DeepScite in Haskell using the Haskell TensorFlow bindings.
 description:    Please see README.md
 category:       Web
@@ -23,24 +23,25 @@ executable deepscite-hs
   default-extensions: UndecidableInstances
   build-depends:
       base >= 4.7 && < 5
-    , proto-lens == 0.1.*
-    , tensorflow
-    , tensorflow-nn       == 0.1.*
-    , tensorflow-ops      == 0.1.*
-    , tensorflow-proto    == 0.1.*
-    , tensorflow-opgen    == 0.1.*
-    , tensorflow-core-ops == 0.1.*
-    , text
-    , vector
+    , bytestring
     , cassava
     , filepath
-    , bytestring
     , lens-family
-    , transformers
     , mtl
-    , rvar
+    , proto-lens
     , random
+    , random-extras
     , random-fu
     , random-source
-    , random-extras
+    , rvar
+    , tensorflow
+    , tensorflow-logging
+    , tensorflow-ops
+    , tensorflow-core-ops == 0.1.*
+    , tensorflow-proto    == 0.1.*
+    , tensorflow-opgen    == 0.1.*
+    , tensorflow-records
+    , text
+    , transformers
+    , vector
   default-language: Haskell2010

@@ -1,5 +1,5 @@
 name:                deepscite-hs
-version:             0.1.0.0
+version:             0.1.2.0
 synopsis:            DeepScite in Haskell using the Haskell TensorFlow bindings.
 description:         Please see README.md
 homepage:            https://github.com/silky/deep-scite/
@@ -15,27 +15,27 @@ default-extensions:
 
 dependencies:
   - base >= 4.7 && < 5
-  - proto-lens == 0.1.*
-  # TODO: Figure out how to remove the version constraints here.
-  - tensorflow
-  - tensorflow-nn       == 0.1.*
-  - tensorflow-ops      == 0.1.*
-  - tensorflow-proto    == 0.1.*
-  - tensorflow-opgen    == 0.1.*
-  - tensorflow-core-ops == 0.1.*
-  - text
-  - vector
+  - bytestring
   - cassava
   - filepath
-  - bytestring
   - lens-family
-  - transformers
   - mtl
-  - rvar
+  - proto-lens
   - random
+  - random-extras
   - random-fu
   - random-source
-  - random-extras
+  - rvar
+  - tensorflow
+  - tensorflow-logging
+  - tensorflow-ops
+  - tensorflow-core-ops == 0.1.*
+  - tensorflow-proto    == 0.1.*
+  - tensorflow-opgen    == 0.1.*
+  - tensorflow-records
+  - text
+  - transformers
+  - vector
 
 
 executables:

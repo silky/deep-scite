@@ -1,5 +1,4 @@
-# Note: Doesn't work with ghc-8. (lts-7.2)
-resolver: lts-6.2
+resolver: lts-8.15
 flags: {}
 extra-package-dbs: []
 system-ghc: false
@@ -9,21 +8,22 @@ packages:
  - '.'
  - location: 
      git    : https://github.com/tensorflow/haskell/
-     commit : 56a629f9dab17d9614bf2b7cc4c4e5d33b30e923
+     commit : afbcd1b7721e082211496c1be11fc3550bc205bc
    subdirs:
-       - tensorflow
-       - tensorflow-nn
-       - tensorflow-ops
-       - tensorflow-opgen
-       - tensorflow-proto
-       - tensorflow-core-ops
+        - tensorflow
+        - tensorflow-logging
+        - tensorflow-ops
+        - tensorflow-core-ops
+        - tensorflow-proto
+        - tensorflow-opgen
+        - tensorflow-records
+        - tensorflow-records-conduit
    extra-dep: true
 
 
 extra-deps:
-# proto-lens is not yet in Stackage.
-- proto-lens-0.1.0.4
-- proto-lens-protoc-0.1.0.4
+- snappy-framing-0.1.1
+- snappy-0.2.0.2
 - random-extras-0.19
 
 
